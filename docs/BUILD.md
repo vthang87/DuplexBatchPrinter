@@ -23,6 +23,16 @@ The release script creates and ad-hoc signs the complete app bundle at:
 dist/PDF Duplex Batch Printer.app
 ```
 
+## Stable Signing and CI
+
+Without `SIGN_IDENTITY`, the build script ad-hoc signs the bundle, so every build gets a new identity and macOS may ask for notification permission again. To sign with a fixed certificate:
+
+```sh
+SIGN_IDENTITY="DuplexBatchPrinter Signing" ./scripts/build-app.sh release
+```
+
+`.github/workflows/build.yml` runs the tests, imports the self-signed `DuplexBatchPrinter Signing` certificate from the repository secrets `MACOS_CERT_P12_BASE64` and `MACOS_CERT_PASSWORD`, builds, and uploads the zipped app as an artifact. Pushing a `v*` tag also publishes a GitHub release. The certificate is self-signed, not a Developer ID, so Gatekeeper still requires **Open** from the context menu on first launch.
+
 ## Build in Xcode
 
 1. Open `Package.swift` in Xcode.

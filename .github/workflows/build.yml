@@ -1,0 +1,75 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tests
+        run: swift test
+
+      - name: Import signing certificate
+        if: github.event_name != 'pull_request'
+        env:
+          MACOS_CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          keychain_password="$(uuidgen)"
+          cert_dir="$RUNNER_TEMP/cert"
+          mkdir -p "$cert_dir"
+          echo "$MACOS_CERT_P12_BASE64" | base64 --decode > "$cert_dir/cert.p12"
+
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$cert_dir/cert.p12" -k "$keychain" -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain"
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+
+          # A self-signed certificate is only a valid codesign identity once it is trusted.
+          security find-certificate -c "DuplexBatchPrinter Signing" -p "$keychain" > "$cert_dir/cert.pem"
+          sudo security add-trusted-cert -d -r trustRoot -p codeSign -k /Library/Keychains/System.keychain "$cert_dir/cert.pem"
+          rm -rf "$cert_dir"
+
+          security find-identity -v -p codesigning "$keychain"
+          echo "SIGN_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+          echo "SIGN_IDENTITY=DuplexBatchPrinter Signing" >> "$GITHUB_ENV"
+
+      - name: Build app bundle
+        run: ./scripts/build-app.sh release
+
+      - name: Show signature
+        run: codesign -dvv --requirements - "dist/PDF Duplex Batch Printer.app" 2>&1
+
+      - name: Package
+        run: |
+          cd dist
+          ditto -c -k --keepParent "PDF Duplex Batch Printer.app" PDFDuplexBatchPrinter.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PDFDuplexBatchPrinter
+          path: dist/PDFDuplexBatchPrinter.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/PDFDuplexBatchPrinter.zip --generate-notes
+
+      - name: Remove signing keychain
+        if: always()
+        run: |
+          if [[ -n "${SIGN_KEYCHAIN:-}" ]]; then security delete-keychain "$SIGN_KEYCHAIN" || true; fi

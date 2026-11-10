@@ -19,7 +19,14 @@ cp "$project_root/Resources/Info.plist" "$contents/Info.plist"
 cp "$project_root/Resources/AppIcon.icns" "$contents/Resources/AppIcon.icns"
 chmod +x "$contents/MacOS/$executable_name"
 
-# Ad-hoc signing lets Launch Services treat the local build as a normal app bundle.
-codesign --force --deep --sign - "$app_bundle"
+# SIGN_IDENTITY selects a stable certificate (name or SHA-1) so every build keeps the
+# same designated requirement; without it the bundle is ad-hoc signed.
+sign_identity="${SIGN_IDENTITY:--}"
+sign_args=(--force --deep --sign "$sign_identity")
+if [[ -n "${SIGN_KEYCHAIN:-}" ]]; then
+    sign_args+=(--keychain "$SIGN_KEYCHAIN")
+fi
+codesign "${sign_args[@]}" "$app_bundle"
+codesign --verify --strict "$app_bundle"
 
 echo "$app_bundle"
