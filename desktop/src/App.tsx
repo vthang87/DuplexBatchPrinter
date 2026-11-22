@@ -483,20 +483,26 @@ export default function App() {
           )}
 
           {activeQueue.length === 0 ? (
-            <div className="empty">
-              <div className="empty-icon">{isImages ? "🖼" : "📄"}</div>
+            <button
+              type="button"
+              className="empty"
+              disabled={running}
+              onClick={() => void addFiles()}
+            >
+              <span className="empty-icon">{isImages ? "🖼" : "📄"}</span>
               <strong>
                 {isImages
                   ? t("queue.empty.images.title")
                   : t("queue.empty.pdfs.title")}
               </strong>
-              <p>
+              <span className="empty-text">
                 {isImages
                   ? t("queue.empty.images.detail")
                   : t("queue.empty.pdfs.detail")}
-              </p>
-              <p className="panel-subtitle">{t("queue.dropHint")}</p>
-            </div>
+              </span>
+              <span className="empty-action">{t("queue.empty.clickHint")}</span>
+              <span className="empty-text panel-subtitle">{t("queue.dropHint")}</span>
+            </button>
           ) : viewMode === "list" ? (
             <QueueList
               items={activeQueue}

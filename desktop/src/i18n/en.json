@@ -27,6 +27,7 @@
   "queue.empty.pdfs.detail": "Add PDF files to create a sequential print queue.",
   "queue.empty.images.title": "No Images",
   "queue.empty.images.detail": "Add images in the order you want them printed.",
+  "queue.empty.clickHint": "Click here to choose files",
   "queue.dropHint": "Tip: drag files from Finder onto this window. Swipe left to delete, drag ⠿ to reorder.",
   "queue.pageCount": "{{count}} pages",
   "queue.pageNumber": "Page {{count}}",

@@ -549,6 +549,32 @@ select {
   text-align: center;
   padding: 24px;
   color: var(--muted);
+  width: 100%;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.empty:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--panel);
+}
+
+.empty:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.empty:disabled {
+  cursor: default;
+}
+
+.empty .empty-action {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .empty .empty-icon {
@@ -568,7 +594,8 @@ select {
   font-size: 15px;
 }
 
-.empty p {
+.empty .empty-text {
+  display: block;
   margin: 0;
   max-width: 280px;
   font-size: 12px;

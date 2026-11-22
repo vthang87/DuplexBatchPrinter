@@ -27,6 +27,7 @@
   "queue.empty.pdfs.detail": "Thêm các file PDF để tạo hàng đợi in tuần tự.",
   "queue.empty.images.title": "Chưa có ảnh",
   "queue.empty.images.detail": "Thêm ảnh theo đúng thứ tự bạn muốn in.",
+  "queue.empty.clickHint": "Bấm vào đây để chọn file",
   "queue.dropHint": "Mẹo: kéo thả file từ Finder vào cửa sổ. Vuốt trái để xóa, kéo ⠿ để sắp xếp.",
   "queue.pageCount": "{{count}} trang",
   "queue.pageNumber": "Trang {{count}}",
