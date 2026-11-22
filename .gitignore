@@ -4,3 +4,10 @@
 DerivedData/
 *.xcuserstate
 dist/
+desktop/node_modules/
+desktop/dist/
+desktop/src-tauri/target/
+desktop/src-tauri/resources/windows/SumatraPDF.exe
+*.p12
+.env
+.env.*

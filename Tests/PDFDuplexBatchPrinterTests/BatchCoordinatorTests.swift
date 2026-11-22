@@ -5,6 +5,15 @@ import XCTest
 
 @MainActor
 final class BatchCoordinatorTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        L10n.language = .english
+    }
+
+    override func tearDown() {
+        L10n.language = .system
+        super.tearDown()
+    }
     func testImageListSingleSidedUpdatesEachPageAsItsJobCompletes() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -151,6 +160,76 @@ final class BatchCoordinatorTests: XCTestCase {
             "second.pdf — Odd pages",
             "second.pdf — Even pages"
         ])
+        XCTAssertEqual(queue.map(\.status), [.completed, .completed])
+    }
+
+    func testOddLengthFileWarnsThatLastSheetGetsBlankBack() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let sourceURL = try makePDF(named: "three.pdf", pageCount: 3, in: directory)
+        var queue = [PDFQueueItem(url: sourceURL, pageCount: 3)]
+        let service = RecordingPrintService()
+        let coordinator = BatchCoordinator(printService: service)
+        let box = BindingBox<[PDFQueueItem]>(get: { queue }, set: { queue = $0 })
+
+        coordinator.start(queue: box, profile: PrinterProfile(printerQueue: "test"))
+        try await waitUntil { coordinator.state.isWaitingForFlip(file: "three.pdf") }
+        guard case .waitingForFlip(_, let instruction) = coordinator.state else { return XCTFail("Expected flip") }
+        XCTAssertTrue(instruction.contains("page 3 gets a blank back"), instruction)
+
+        coordinator.confirmPaperFlipped()
+        try await waitUntil { coordinator.state == .completed }
+        XCTAssertEqual(queue[0].status, .completed)
+
+        let evenInstruction = coordinator.flipInstruction(profile: PrinterProfile(printerQueue: "test"))
+        XCTAssertFalse(evenInstruction.contains("blank"), evenInstruction)
+    }
+
+    func testCombinedModePrintsAllFilesWithOneFlip() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        var queue = [
+            PDFQueueItem(url: try makePDF(named: "a.pdf", pageCount: 3, in: directory), pageCount: 3),
+            PDFQueueItem(url: try makePDF(named: "b.pdf", pageCount: 2, in: directory), pageCount: 2)
+        ]
+        let service = RecordingPrintService()
+        let coordinator = BatchCoordinator(printService: service)
+        let box = BindingBox<[PDFQueueItem]>(get: { queue }, set: { queue = $0 })
+
+        coordinator.start(queue: box, mode: .combined, profile: PrinterProfile(printerQueue: "test"))
+        try await waitUntil { coordinator.state.isWaitingForFlip(file: "Combined batch (2 files)") }
+        XCTAssertEqual(queue.map(\.status), [.waitingForFlip, .waitingForFlip])
+        guard case .waitingForFlip(_, let instruction) = coordinator.state else { return XCTFail("Expected flip") }
+        XCTAssertTrue(instruction.contains("Keep every sheet"), instruction)
+
+        coordinator.confirmPaperFlipped()
+        try await waitUntil { coordinator.state == .completed }
+        let titles = await service.submittedTitles()
+        XCTAssertEqual(titles, [
+            "Combined batch (2 files) — Odd pages",
+            "Combined batch (2 files) — Even pages"
+        ])
+        XCTAssertEqual(queue.map(\.status), [.completed, .completed])
+    }
+
+    func testCombinedModeOfSinglePageFilesSkipsFlip() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        var queue = [
+            PDFQueueItem(url: try makePDF(named: "a.pdf", pageCount: 1, in: directory), pageCount: 1),
+            PDFQueueItem(url: try makePDF(named: "b.pdf", pageCount: 1, in: directory), pageCount: 1)
+        ]
+        let service = RecordingPrintService()
+        let coordinator = BatchCoordinator(printService: service)
+        let box = BindingBox<[PDFQueueItem]>(get: { queue }, set: { queue = $0 })
+
+        coordinator.start(queue: box, mode: .combined, profile: PrinterProfile(printerQueue: "test"))
+        try await waitUntil { coordinator.state == .completed }
+        let titles = await service.submittedTitles()
+        XCTAssertEqual(titles, ["Combined batch (2 files) — Odd pages"])
         XCTAssertEqual(queue.map(\.status), [.completed, .completed])
     }
 

@@ -6,8 +6,8 @@ enum CUPSServiceError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .commandFailed(let command, let message): "CUPS command \(command) failed: \(message)"
-        case .submissionResponse(let response): "CUPS did not return a job ID: \(response)"
+        case .commandFailed(let command, let message): L10n.tr("error.cups.commandFailed", command, message)
+        case .submissionResponse(let response): L10n.tr("error.cups.noJobID", response)
         }
     }
 }

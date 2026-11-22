@@ -12,12 +12,12 @@ enum PDFServiceError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .cannotOpen(let url): "Cannot open \(url.lastPathComponent)."
-        case .cannotOpenImage(let url): "Cannot open image \(url.lastPathComponent)."
-        case .emptyImageList: "Add at least one image before printing."
-        case .emptyDocument(let url): "\(url.lastPathComponent) has no pages."
-        case .cannotCreatePage: "Cannot create a blank PDF page."
-        case .cannotWrite(let url): "Cannot write temporary PDF at \(url.path)."
+        case .cannotOpen(let url): L10n.tr("error.pdf.cannotOpen", url.lastPathComponent)
+        case .cannotOpenImage(let url): L10n.tr("error.pdf.cannotOpenImage", url.lastPathComponent)
+        case .emptyImageList: L10n.tr("error.pdf.emptyImageList")
+        case .emptyDocument(let url): L10n.tr("error.pdf.emptyDocument", url.lastPathComponent)
+        case .cannotCreatePage: L10n.tr("error.pdf.cannotCreatePage")
+        case .cannotWrite(let url): L10n.tr("error.pdf.cannotWrite", url.path)
         }
     }
 }
@@ -66,6 +66,25 @@ struct PDFService {
         let destination = temporaryDirectory.appendingPathComponent("\(UUID().uuidString)-\(safeLabel).pdf")
         guard output.write(to: destination) else { throw PDFServiceError.cannotWrite(destination) }
         return destination
+    }
+
+    /// Concatenates the source PDFs in order and returns the page count of each one.
+    func makeMergedDocument(sourceURLs: [URL], temporaryDirectory: URL) throws -> (url: URL, pageCounts: [Int]) {
+        let output = PDFDocument()
+        var pageCounts: [Int] = []
+        for url in sourceURLs {
+            guard let source = PDFDocument(url: url) else { throw PDFServiceError.cannotOpen(url) }
+            guard source.pageCount > 0 else { throw PDFServiceError.emptyDocument(url) }
+            for index in 0..<source.pageCount {
+                guard let page = source.page(at: index)?.copy() as? PDFPage else { throw PDFServiceError.cannotCreatePage }
+                output.insert(page, at: output.pageCount)
+            }
+            pageCounts.append(source.pageCount)
+        }
+
+        let destination = temporaryDirectory.appendingPathComponent("\(UUID().uuidString)-merged.pdf")
+        guard output.write(to: destination) else { throw PDFServiceError.cannotWrite(destination) }
+        return (destination, pageCounts)
     }
 
     func makeImageDocument(

@@ -27,10 +27,29 @@ struct MainView: View {
         .toolbar {
             ToolbarItemGroup {
                 Button { isImporting = true } label: {
-                    Label(model.queueContent == .pdfs ? "Add PDFs" : "Add Images", systemImage: "plus")
+                    Label(L10n.tr(model.queueContent == .pdfs ? "toolbar.addPDFs" : "toolbar.addImages"), systemImage: "plus")
                 }
                     .disabled(coordinator.state.isRunning)
-                Button { Task { await model.reloadPrinters() } } label: { Label("Refresh printers", systemImage: "arrow.clockwise") }
+                Button { Task { await model.reloadPrinters() } } label: {
+                    Label(L10n.tr("toolbar.refreshPrinters"), systemImage: "arrow.clockwise")
+                }
+                Menu {
+                    ForEach(AppLanguage.allCases) { language in
+                        Button {
+                            model.language = language
+                        } label: {
+                            if model.language == language {
+                                Label(language.title, systemImage: "checkmark")
+                            } else {
+                                Text(language.title)
+                            }
+                        }
+                    }
+                } label: {
+                    Label(model.language.toolbarTitle, systemImage: "globe")
+                }
+                .labelStyle(.titleAndIcon)
+                .help(L10n.tr("toolbar.language"))
             }
         }
         .fileImporter(isPresented: $isImporting, allowedContentTypes: importTypes, allowsMultipleSelection: true) { result in
@@ -55,22 +74,22 @@ struct MainView: View {
         .sheet(item: $previewSelection) { selection in
             QueuePreviewSheet(selection: selection)
         }
-        .alert("PDF Duplex Batch Printer", isPresented: Binding(
+        .alert(L10n.tr("app.name"), isPresented: Binding(
             get: { model.alertMessage != nil },
             set: { if !$0 { model.alertMessage = nil } }
         )) {
-            Button("OK") { model.alertMessage = nil }
+            Button(L10n.tr("common.ok")) { model.alertMessage = nil }
         } message: {
             Text(model.alertMessage ?? "")
         }
         .alert(item: $flipAlert) { context in
             Alert(
-                title: Text("Đã in xong mặt lẻ"),
+                title: Text(L10n.tr("flip.title")),
                 message: Text("\(context.file)\n\n\(context.instruction)"),
-                primaryButton: .default(Text("Đã lật giấy – In mặt chẵn")) {
+                primaryButton: .default(Text(L10n.tr("flip.alert.confirm"))) {
                     coordinator.confirmPaperFlipped()
                 },
-                secondaryButton: .cancel(Text("Để sau"))
+                secondaryButton: .cancel(Text(L10n.tr("flip.alert.later")))
             )
         }
     }
@@ -79,22 +98,22 @@ struct MainView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(model.queueContent == .pdfs ? "PDF Print Queue" : "Image Print Queue").font(.title2.bold())
+                    Text(L10n.tr(model.queueContent == .pdfs ? "queue.title.pdfs" : "queue.title.images")).font(.title2.bold())
                     Text(queueSummary)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button { showPreview(index: 0) } label: {
-                    Label("Preview", systemImage: "eye")
+                    Label(L10n.tr("queue.preview"), systemImage: "eye")
                 }
                 .disabled(activeQueueIsEmpty)
-                Button("Clear") { clearActiveQueue() }
+                Button(L10n.tr("queue.clear")) { clearActiveQueue() }
                     .disabled(activeQueueIsEmpty || coordinator.state.isRunning)
             }
 
             HStack {
-                Picker("Queue type", selection: $model.queueContent) {
-                    ForEach(QueueContent.allCases) { Text($0.rawValue).tag($0) }
+                Picker(L10n.tr("queue.type"), selection: $model.queueContent) {
+                    ForEach(QueueContent.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
@@ -102,24 +121,26 @@ struct MainView: View {
 
                 Spacer()
 
-                Picker("View", selection: $queueViewMode) {
+                Picker(L10n.tr("queue.view"), selection: $queueViewMode) {
                     ForEach(QueueViewMode.allCases) { mode in
-                        Label(mode.rawValue, systemImage: mode.systemImage).tag(mode)
+                        Image(systemName: mode.systemImage)
+                            .tag(mode)
+                            .accessibilityLabel(mode.title)
+                            .help(mode.title)
                     }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(width: 96)
+                .frame(width: 72)
+                .help(L10n.tr("queue.view"))
             }
             .disabled(coordinator.state.isRunning)
 
             if activeQueueIsEmpty {
                 ContentUnavailableView(
-                    model.queueContent == .pdfs ? "No PDFs" : "No Images",
+                    L10n.tr(model.queueContent == .pdfs ? "queue.empty.pdfs.title" : "queue.empty.images.title"),
                     systemImage: model.queueContent == .pdfs ? "doc.richtext" : "photo.on.rectangle.angled",
-                    description: Text(model.queueContent == .pdfs
-                        ? "Add PDF files to create a sequential print queue."
-                        : "Add images in the order you want them printed.")
+                    description: Text(L10n.tr(model.queueContent == .pdfs ? "queue.empty.pdfs.detail" : "queue.empty.images.detail"))
                 )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .dropDestination(for: URL.self) { urls, _ in
@@ -130,8 +151,12 @@ struct MainView: View {
                     if model.queueContent == .pdfs {
                         List {
                             ForEach(Array(model.queue.enumerated()), id: \.element.id) { index, item in
-                                PDFQueueRow(
-                                    item: item,
+                                QueueRow(
+                                    title: item.name,
+                                    detail: "\(L10n.tr("queue.pageCount", item.pageCount)) · \(statusText(item.status, isPDF: true))",
+                                    status: item.status,
+                                    systemImage: "doc.richtext.fill",
+                                    tint: .red,
                                     index: index,
                                     count: model.queue.count,
                                     isLocked: coordinator.state.isRunning,
@@ -146,8 +171,12 @@ struct MainView: View {
                     } else {
                         List {
                             ForEach(Array(model.imageQueue.enumerated()), id: \.element.id) { index, item in
-                                ImageQueueRow(
-                                    item: item,
+                                QueueRow(
+                                    title: item.name,
+                                    detail: "\(L10n.tr("queue.pageNumber", index + 1)) · \(statusText(item.status, isPDF: false))",
+                                    status: item.status,
+                                    systemImage: "photo.fill",
+                                    tint: .blue,
                                     index: index,
                                     count: model.imageQueue.count,
                                     isLocked: coordinator.state.isRunning,
@@ -171,63 +200,59 @@ struct MainView: View {
     private var settingsPanel: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Shared Print Settings").font(.title2.bold())
+                Text(L10n.tr("settings.title")).font(.title2.bold())
                 Text(settingsDescription)
                     .font(.callout).foregroundStyle(.secondary)
 
-                if model.queueContent == .images {
-                    Picker("Print sides", selection: $model.imagePrintMode) {
-                        ForEach(ImagePrintMode.allCases) { Text($0.rawValue).tag($0) }
+                if model.queueContent == .pdfs {
+                    Picker(L10n.tr("settings.pdfBatchMode"), selection: $model.pdfBatchMode) {
+                        ForEach(PDFBatchMode.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .disabled(coordinator.state.isRunning)
+                } else {
+                    Picker(L10n.tr("settings.printSides"), selection: $model.imagePrintMode) {
+                        ForEach(ImagePrintMode.allCases) { Text($0.title).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     .disabled(coordinator.state.isRunning)
                 }
 
-                Picker("Installed printer", selection: $model.selectedPrinter) {
-                    if model.printers.isEmpty { Text("No printers found").tag("") }
+                Picker(L10n.tr("settings.printer"), selection: $model.selectedPrinter) {
+                    if model.printers.isEmpty { Text(L10n.tr("settings.noPrinters")).tag("") }
                     ForEach(model.printers) { printer in
-                        Text(printer.displayName + (printer.isDefault ? " (Default)" : "")).tag(printer.queueName)
+                        Text(printer.isDefault ? L10n.tr("settings.defaultPrinter", printer.displayName) : printer.displayName)
+                            .tag(printer.queueName)
                     }
                 }
                 .onChange(of: model.selectedPrinter) { _, _ in model.printerChanged() }
                 .disabled(coordinator.state.isRunning)
 
-                Picker("Saved profile", selection: Binding(
+                Picker(L10n.tr("settings.savedProfile"), selection: Binding(
                     get: { model.selectedProfileID },
                     set: { model.selectProfile(id: $0) }
                 )) {
-                    Text("New profile").tag(Optional<UUID>.none)
+                    Text(L10n.tr("settings.newProfile")).tag(Optional<UUID>.none)
                     ForEach(model.matchingProfiles) { profile in
                         Text(profile.name).tag(Optional(profile.id))
                     }
                 }
                 .disabled(model.selectedPrinter.isEmpty || coordinator.state.isRunning)
 
-                GroupBox("Profile") {
+                GroupBox(L10n.tr("profile.title")) {
                     VStack(alignment: .leading, spacing: 10) {
-                        TextField("Profile name", text: $model.editableProfile.name)
-                        Picker("Paper", selection: $model.editableProfile.paperSize) {
-                            ForEach(PaperSize.allCases) { Text($0.rawValue).tag($0) }
+                        TextField(L10n.tr("profile.name"), text: $model.editableProfile.name)
+                        Picker(L10n.tr("profile.paper"), selection: $model.editableProfile.paperSize) {
+                            ForEach(PaperSize.allCases) { Text($0.title).tag($0) }
                         }
-                        Picker("Color", selection: $model.editableProfile.colorMode) {
-                            ForEach(ColorMode.allCases) { Text($0.rawValue).tag($0) }
+                        Picker(L10n.tr("profile.color"), selection: $model.editableProfile.colorMode) {
+                            ForEach(ColorMode.allCases) { Text($0.title).tag($0) }
                         }
-                        Picker("Odd pass order", selection: $model.editableProfile.oddOrder) {
-                            ForEach(PageOrder.allCases) { Text($0.rawValue).tag($0) }
-                        }
-                        Picker("Even pass order", selection: $model.editableProfile.evenOrder) {
-                            ForEach(PageOrder.allCases) { Text($0.rawValue).tag($0) }
-                        }
-                        Picker("Reinsert rotation", selection: $model.editableProfile.evenRotation) {
-                            ForEach(PaperRotation.allCases) { Text($0.rawValue).tag($0) }
-                        }
-                        Picker("Binding edge", selection: $model.editableProfile.flipEdge) {
-                            ForEach(FlipEdge.allCases) { Text($0.rawValue).tag($0) }
-                        }
+                        ProfileOrderPickers(profile: $model.editableProfile)
                         HStack {
-                            Button("Save Profile") { model.saveProfile() }
+                            Button(L10n.tr("profile.save")) { model.saveProfile() }
                             Spacer()
-                            Button("Calibrate…") { showCalibration = true }
+                            Button(L10n.tr("profile.calibrate")) { showCalibration = true }
                         }
                     }
                     .padding(4)
@@ -235,11 +260,14 @@ struct MainView: View {
                 .disabled(model.selectedPrinter.isEmpty || coordinator.state.isRunning)
 
                 if let date = model.editableProfile.lastCalibrated {
-                    Label("Calibrated \(date.formatted(date: .abbreviated, time: .shortened))", systemImage: "checkmark.seal.fill")
+                    Label(
+                        L10n.tr("profile.calibratedAt", date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: L10n.locale))),
+                        systemImage: "checkmark.seal.fill"
+                    )
                         .foregroundStyle(.green)
                         .font(.callout)
                 } else {
-                    Label("Profile not calibrated", systemImage: "exclamationmark.triangle.fill")
+                    Label(L10n.tr("profile.notCalibrated"), systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
                         .font(.callout)
                 }
@@ -254,7 +282,7 @@ struct MainView: View {
             stateIcon
             VStack(alignment: .leading, spacing: 4) {
                 Text(stateTitle).font(.headline)
-                Text(stateDetail).font(.callout).foregroundStyle(.secondary).lineLimit(2)
+                Text(stateDetail).font(.callout).foregroundStyle(.secondary).lineLimit(3)
             }
             Spacer()
             controls
@@ -268,27 +296,30 @@ struct MainView: View {
 
     private var stateTitle: String {
         switch coordinator.state {
-        case .idle: "Ready"
-        case .preparing(let file): "Preparing \(file)"
-        case .printing(let file, let phase, _): phase == .single
-            ? "Printing one-sided — \(file)"
-            : "Printing \(phase.rawValue.lowercased()) — \(file)"
-        case .waitingForFlip(let file, _): "Flip paper for \(file)"
-        case .pausedOnError(let file, _): "Printing paused — \(file)"
-        case .completed: "Batch completed"
-        case .cancelled: "Batch cancelled"
+        case .idle: L10n.tr("state.ready")
+        case .preparing(let file): L10n.tr("state.preparing", file)
+        case .printing(let file, let phase, _):
+            switch phase {
+            case .single: L10n.tr("state.printing.single", file)
+            case .odd: L10n.tr("state.printing.odd", file)
+            case .even: L10n.tr("state.printing.even", file)
+            }
+        case .waitingForFlip(let file, _): L10n.tr("state.flip", file)
+        case .pausedOnError(let file, _): L10n.tr("state.paused", file)
+        case .completed: L10n.tr("state.completed")
+        case .cancelled: L10n.tr("state.cancelled")
         }
     }
 
     private var stateDetail: String {
         switch coordinator.state {
         case .idle: idleDetail
-        case .preparing: "Creating a temporary print pass."
-        case .printing(_, _, let jobID): jobID.map { "CUPS job \($0)" } ?? "Submitting to CUPS…"
+        case .preparing: L10n.tr("state.preparing.detail")
+        case .printing(_, _, let jobID): jobID.map { L10n.tr("state.printing.job", $0) } ?? L10n.tr("state.printing.submitting")
         case .waitingForFlip(_, let instruction): instruction
         case .pausedOnError(_, let message): message
-        case .completed: "Every non-skipped file has completed both passes."
-        case .cancelled: "No additional print passes will be submitted."
+        case .completed: L10n.tr("state.completed.detail")
+        case .cancelled: L10n.tr("state.cancelled.detail")
         }
     }
 
@@ -296,18 +327,18 @@ struct MainView: View {
     private var controls: some View {
         switch coordinator.state {
         case .waitingForFlip:
-            Button("Paper Reinserted — Print Even") { coordinator.confirmPaperFlipped() }
+            Button(L10n.tr("controls.printEven")) { coordinator.confirmPaperFlipped() }
                 .buttonStyle(.borderedProminent)
-            Button("Cancel") { coordinator.cancel() }
+            Button(L10n.tr("common.cancel")) { coordinator.cancel() }
         case .pausedOnError:
-            Button("Retry") { coordinator.resolveError(.retry) }.buttonStyle(.borderedProminent)
-            Button("Skip File") { coordinator.resolveError(.skip) }
-            Button("Cancel") { coordinator.resolveError(.cancel) }
+            Button(L10n.tr("controls.retry")) { coordinator.resolveError(.retry) }.buttonStyle(.borderedProminent)
+            Button(L10n.tr("controls.skip")) { coordinator.resolveError(.skip) }
+            Button(L10n.tr("common.cancel")) { coordinator.resolveError(.cancel) }
         case .preparing, .printing:
             ProgressView().controlSize(.small)
-            Button("Cancel") { coordinator.cancel() }
+            Button(L10n.tr("common.cancel")) { coordinator.cancel() }
         default:
-            Button("Start Batch Print") { startBatch() }
+            Button(L10n.tr("controls.start")) { startBatch() }
                 .buttonStyle(.borderedProminent)
                 .disabled(activeQueueIsEmpty || model.selectedPrinter.isEmpty || model.hasMissingFiles)
         }
@@ -318,7 +349,7 @@ struct MainView: View {
         profile.printerQueue = model.selectedPrinter
         let box = BindingBox<[PDFQueueItem]>(get: { model.queue }, set: { model.queue = $0 })
         if model.queueContent == .pdfs {
-            coordinator.start(queue: box, profile: profile)
+            coordinator.start(queue: box, mode: model.pdfBatchMode, profile: profile)
         } else {
             let imageBox = BindingBox<[ImageQueueItem]>(get: { model.imageQueue }, set: { model.imageQueue = $0 })
             coordinator.startImages(queue: imageBox, mode: model.imagePrintMode, profile: profile)
@@ -333,25 +364,25 @@ struct MainView: View {
 
     private var queueSummary: String {
         switch model.queueContent {
-        case .pdfs: "\(model.queue.count) files · \(model.queue.reduce(0) { $0 + $1.pageCount }) pages"
-        case .images: "\(model.imageQueue.count) images · \(model.imageQueue.count) pages"
+        case .pdfs: L10n.tr("queue.summary.pdfs", model.queue.count, model.queue.reduce(0) { $0 + $1.pageCount })
+        case .images: L10n.tr("queue.summary.images", model.imageQueue.count, model.imageQueue.count)
         }
     }
 
     private var settingsDescription: String {
         if model.queueContent == .images && model.imagePrintMode == .singleSided {
-            return "Images print in list order, one image per sheet, using one shared printer profile."
+            return L10n.tr("settings.description.imagesSingle")
         }
-        return "One printer and profile are applied to every odd and even pass in this batch."
+        return L10n.tr("settings.description.shared")
     }
 
     private var idleDetail: String {
-        if model.queueContent == .images && model.imagePrintMode == .singleSided {
-            return "Images print in list order, one one-sided job per image, so each row updates as it completes."
+        switch model.queueContent {
+        case .pdfs:
+            return L10n.tr(model.pdfBatchMode == .combined ? "idle.pdfs.combined" : "idle.pdfs.perFile")
+        case .images:
+            return L10n.tr(model.imagePrintMode == .singleSided ? "idle.images.single" : "idle.images.double")
         }
-        return model.queueContent == .images
-            ? "The image list is treated as pages: odd pages → flip → even pages."
-            : "Files are processed one at a time: odd pages → flip → even pages → next file."
     }
 
     private func clearActiveQueue() {
@@ -386,7 +417,7 @@ struct MainView: View {
                         QueueThumbnailCard(
                             url: item.url,
                             title: item.name,
-                            detail: "\(item.pageCount) pages · \(statusText(item.status))",
+                            detail: "\(L10n.tr("queue.pageCount", item.pageCount)) · \(statusText(item.status, isPDF: true))",
                             detailColor: statusColor(item.status),
                             index: index,
                             count: model.queue.count,
@@ -401,7 +432,7 @@ struct MainView: View {
                         QueueThumbnailCard(
                             url: item.url,
                             title: item.name,
-                            detail: "Page \(index + 1) · \(statusText(item.status))",
+                            detail: "\(L10n.tr("queue.pageNumber", index + 1)) · \(statusText(item.status, isPDF: false))",
                             detailColor: statusColor(item.status),
                             index: index,
                             count: model.imageQueue.count,
@@ -419,14 +450,38 @@ struct MainView: View {
     }
 }
 
+/// Odd/even order, reinsertion rotation, and binding edge, shared by the profile editor and calibration.
+struct ProfileOrderPickers: View {
+    @Binding var profile: PrinterProfile
+
+    var body: some View {
+        Picker(L10n.tr("profile.oddOrder"), selection: $profile.oddOrder) {
+            ForEach(PageOrder.allCases) { Text($0.title).tag($0) }
+        }
+        Picker(L10n.tr("profile.evenOrder"), selection: $profile.evenOrder) {
+            ForEach(PageOrder.allCases) { Text($0.title).tag($0) }
+        }
+        Picker(L10n.tr("profile.rotation"), selection: $profile.evenRotation) {
+            ForEach(PaperRotation.allCases) { Text($0.title).tag($0) }
+        }
+        Picker(L10n.tr("profile.bindingEdge"), selection: $profile.flipEdge) {
+            ForEach(FlipEdge.allCases) { Text($0.title).tag($0) }
+        }
+    }
+}
+
 private struct FlipAlertContext: Identifiable {
     let id = UUID()
     let file: String
     let instruction: String
 }
 
-private struct PDFQueueRow: View {
-    let item: PDFQueueItem
+private struct QueueRow: View {
+    let title: String
+    let detail: String
+    let status: QueueItemStatus
+    let systemImage: String
+    let tint: Color
     let index: Int
     let count: Int
     let isLocked: Bool
@@ -436,66 +491,14 @@ private struct PDFQueueRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Text("\(index + 1)").font(.headline.monospacedDigit()).foregroundStyle(.secondary).frame(width: 26)
-            Image(systemName: "doc.richtext.fill").foregroundStyle(.red)
+            Image(systemName: systemImage).foregroundStyle(tint)
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.name).lineLimit(1)
-                Text("\(item.pageCount) pages · \(statusText)").font(.caption).foregroundStyle(statusColor)
+                Text(title).lineLimit(1)
+                Text(detail).font(.caption).foregroundStyle(statusColor(status))
             }
             Spacer()
             Button(action: preview) { Image(systemName: "eye") }
-                .buttonStyle(.borderless).help("Preview")
-            Button { move(-1) } label: { Image(systemName: "chevron.up") }
-                .buttonStyle(.borderless).disabled(index == 0 || isLocked)
-            Button { move(1) } label: { Image(systemName: "chevron.down") }
-                .buttonStyle(.borderless).disabled(index == count - 1 || isLocked)
-        }
-        .padding(.vertical, 4)
-    }
-
-    private var statusText: String {
-        switch item.status {
-        case .ready: "Ready"
-        case .printingOdd: "Printing odd pages"
-        case .waitingForFlip: "Waiting for paper flip"
-        case .printingEven: "Printing even pages"
-        case .completed: "Completed"
-        case .skipped: "Skipped"
-        case .failed: "Error"
-        case .missing: "Original file not found"
-        }
-    }
-
-    private var statusColor: Color {
-        switch item.status {
-        case .completed: .green
-        case .failed, .missing: .red
-        case .waitingForFlip: .orange
-        default: .secondary
-        }
-    }
-}
-
-private struct ImageQueueRow: View {
-    let item: ImageQueueItem
-    let index: Int
-    let count: Int
-    let isLocked: Bool
-    let preview: () -> Void
-    let move: (Int) -> Void
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Text("\(index + 1)").font(.headline.monospacedDigit()).foregroundStyle(.secondary).frame(width: 26)
-            Image(systemName: "photo.fill").foregroundStyle(.blue)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.name).lineLimit(1)
-                Text("Page \(index + 1) · \(statusText(item.status))")
-                    .font(.caption)
-                    .foregroundStyle(statusColor(item.status))
-            }
-            Spacer()
-            Button(action: preview) { Image(systemName: "eye") }
-                .buttonStyle(.borderless).help("Preview")
+                .buttonStyle(.borderless).help(L10n.tr("queue.preview"))
             Button { move(-1) } label: { Image(systemName: "chevron.up") }
                 .buttonStyle(.borderless).disabled(index == 0 || isLocked)
             Button { move(1) } label: { Image(systemName: "chevron.down") }
@@ -505,16 +508,16 @@ private struct ImageQueueRow: View {
     }
 }
 
-private func statusText(_ status: QueueItemStatus) -> String {
+private func statusText(_ status: QueueItemStatus, isPDF: Bool) -> String {
     switch status {
-    case .ready: "Ready"
-    case .printingOdd: "Printing"
-    case .waitingForFlip: "Waiting for paper flip"
-    case .printingEven: "Printing even pages"
-    case .completed: "Completed"
-    case .skipped: "Skipped"
-    case .failed: "Error"
-    case .missing: "Original file not found"
+    case .ready: L10n.tr("status.ready")
+    case .printingOdd: L10n.tr(isPDF ? "status.printingOdd" : "status.printing")
+    case .waitingForFlip: L10n.tr("status.waitingForFlip")
+    case .printingEven: L10n.tr("status.printingEven")
+    case .completed: L10n.tr("status.completed")
+    case .skipped: L10n.tr("status.skipped")
+    case .failed: L10n.tr("status.failed")
+    case .missing: L10n.tr("status.missing")
     }
 }
 
@@ -570,17 +573,17 @@ private struct QueueThumbnailCard: View {
 
             HStack(spacing: 12) {
                 Button(action: preview) { Image(systemName: "eye") }
-                    .help("Preview")
+                    .help(L10n.tr("queue.preview"))
                 Spacer()
                 Button { move(-1) } label: { Image(systemName: "arrow.left") }
                     .disabled(index == 0 || isLocked)
-                    .help("Move earlier")
+                    .help(L10n.tr("queue.moveEarlier"))
                 Button { move(1) } label: { Image(systemName: "arrow.right") }
                     .disabled(index == count - 1 || isLocked)
-                    .help("Move later")
+                    .help(L10n.tr("queue.moveLater"))
                 Button(role: .destructive, action: remove) { Image(systemName: "trash") }
                     .disabled(isLocked)
-                    .help("Remove")
+                    .help(L10n.tr("queue.remove"))
             }
             .buttonStyle(.borderless)
         }
@@ -651,16 +654,16 @@ private struct QueuePreviewSheet: View {
                     Text(selection.items[index].title)
                         .font(.headline)
                         .lineLimit(1)
-                    Text("\(index + 1) of \(selection.items.count)")
+                    Text(L10n.tr("preview.position", index + 1, selection.items.count))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button { index -= 1 } label: { Label("Previous", systemImage: "chevron.left") }
+                Button { index -= 1 } label: { Label(L10n.tr("preview.previous"), systemImage: "chevron.left") }
                     .disabled(index == 0)
-                Button { index += 1 } label: { Label("Next", systemImage: "chevron.right") }
+                Button { index += 1 } label: { Label(L10n.tr("preview.next"), systemImage: "chevron.right") }
                     .disabled(index == selection.items.count - 1)
-                Button("Done") { dismiss() }
+                Button(L10n.tr("common.done")) { dismiss() }
                     .keyboardShortcut(.defaultAction)
             }
             .padding(14)
@@ -690,7 +693,7 @@ private struct FilePreviewView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         } else {
-            ContentUnavailableView("Cannot preview file", systemImage: "exclamationmark.triangle")
+            ContentUnavailableView(L10n.tr("preview.unavailable"), systemImage: "exclamationmark.triangle")
         }
     }
 }

@@ -46,15 +46,17 @@ final class ProfileStore: ObservableObject {
     }
 
     private func migrateDefaultPageOrderIfNeeded() {
-        let key = "didMigrateDefaultPageOrderToReverseOddV2"
+        let key = "didMigrateDefaultPageOrderToReverseBothV3"
         guard !userDefaults.bool(forKey: key) else { return }
 
+        // Turning the whole odd stack over reverses the sheet order, so the even
+        // pass must run in the same direction as the odd pass.
+        let formerDefaults: [(PageOrder, PageOrder)] = [(.normal, .reversed), (.reversed, .normal)]
         for index in profiles.indices where
             profiles[index].name == "Default profile" &&
-            profiles[index].oddOrder == .normal &&
-            profiles[index].evenOrder == .reversed {
+            formerDefaults.contains(where: { $0 == (profiles[index].oddOrder, profiles[index].evenOrder) }) {
             profiles[index].oddOrder = .reversed
-            profiles[index].evenOrder = .normal
+            profiles[index].evenOrder = .reversed
         }
 
         do {
@@ -80,6 +82,15 @@ final class AppModel: ObservableObject {
     }
     @Published var imagePrintMode: ImagePrintMode = .doubleSided {
         didSet { userDefaults.set(imagePrintMode.rawValue, forKey: Keys.imagePrintMode) }
+    }
+    @Published var pdfBatchMode: PDFBatchMode = .perFile {
+        didSet { userDefaults.set(pdfBatchMode.rawValue, forKey: Keys.pdfBatchMode) }
+    }
+    @Published var language: AppLanguage = .system {
+        didSet {
+            L10n.language = language
+            userDefaults.set(language.rawValue, forKey: Keys.language)
+        }
     }
     @Published var printers: [PrinterDescriptor] = []
     @Published var selectedPrinter = "" { didSet { userDefaults.set(selectedPrinter, forKey: Keys.printer) } }
@@ -111,6 +122,9 @@ final class AppModel: ObservableObject {
         selectedPrinter = userDefaults.string(forKey: Keys.printer) ?? ""
         queueContent = QueueContent(rawValue: userDefaults.string(forKey: Keys.queueContent) ?? "") ?? .pdfs
         imagePrintMode = ImagePrintMode(rawValue: userDefaults.string(forKey: Keys.imagePrintMode) ?? "") ?? .doubleSided
+        pdfBatchMode = PDFBatchMode(rawValue: userDefaults.string(forKey: Keys.pdfBatchMode) ?? "") ?? .perFile
+        language = AppLanguage(rawValue: userDefaults.string(forKey: Keys.language) ?? "") ?? .system
+        L10n.language = language
         loadQueue()
         loadImageQueue()
     }
@@ -220,7 +234,7 @@ final class AppModel: ObservableObject {
         do {
             queue = try queueCacheStore.load(legacyData: userDefaults.data(forKey: Keys.queue))
         } catch {
-            alertMessage = "Cannot restore the saved PDF queue: \(error.localizedDescription)"
+            alertMessage = L10n.tr("error.queue.restorePDF", error.localizedDescription)
         }
     }
 
@@ -228,7 +242,7 @@ final class AppModel: ObservableObject {
         do {
             try queueCacheStore.save(queue)
         } catch {
-            alertMessage = "Cannot save the PDF queue: \(error.localizedDescription)"
+            alertMessage = L10n.tr("error.queue.savePDF", error.localizedDescription)
         }
     }
 
@@ -236,7 +250,7 @@ final class AppModel: ObservableObject {
         do {
             imageQueue = try imageQueueCacheStore.load()
         } catch {
-            alertMessage = "Cannot restore the saved image queue: \(error.localizedDescription)"
+            alertMessage = L10n.tr("error.queue.restoreImages", error.localizedDescription)
         }
     }
 
@@ -244,7 +258,7 @@ final class AppModel: ObservableObject {
         do {
             try imageQueueCacheStore.save(imageQueue)
         } catch {
-            alertMessage = "Cannot save the image queue: \(error.localizedDescription)"
+            alertMessage = L10n.tr("error.queue.saveImages", error.localizedDescription)
         }
     }
 
@@ -254,5 +268,7 @@ final class AppModel: ObservableObject {
         static let profileID = "selectedProfileID"
         static let queueContent = "selectedQueueContent"
         static let imagePrintMode = "selectedImagePrintMode"
+        static let pdfBatchMode = "selectedPDFBatchMode"
+        static let language = "appLanguage"
     }
 }

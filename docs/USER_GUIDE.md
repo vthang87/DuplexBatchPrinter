@@ -1,5 +1,7 @@
 # User Guide
 
+This guide applies to the Tauri desktop app (`desktop/`) on macOS, Windows, and Linux, and to the legacy Swift macOS app. Print submission uses CUPS on macOS/Linux and SumatraPDF on Windows; the Odd → flip → Even workflow is the same.
+
 ## PDF Queue
 
 1. Select **PDFs**.
@@ -8,7 +10,17 @@
 4. Select the installed printer and saved profile.
 5. Start the batch. Each PDF runs Odd → paper flip confirmation → Even before the next PDF begins.
 
-The default profile prints Odd pages in reverse order and Even pages in normal order. For a nine-page PDF, the order is Odd `9, 7, 5, 3, 1`, then Even `2, 4, 6, 8, 10`, where page 10 is intentional blank padding.
+The default profile prints both passes in reverse order. For a nine-page PDF, the order is Odd `9, 7, 5, 3, 1`, then Even `10, 8, 6, 4, 2`, where page 10 is intentional blank padding. After the Odd pass, turn the whole stack over and put it back in the tray without re-sorting: the sheet with page 9 feeds first and receives page 10, and the sheet with page 1 feeds last and receives page 2.
+
+### Combined Mode: Flip Once
+
+Set **PDF batch mode** to **All files, flip once** to print every PDF in the queue with a single paper flip:
+
+1. The Odd pages of all files print as one job.
+2. Turn the whole stack over once and reinsert it without re-sorting.
+3. The Even pages of all files print as one job.
+
+Each file is padded to an even page count, so every file starts on the front of a new sheet and the finished stack separates cleanly into one set per file, in queue order. No separator sheet is added. If every file has only one page, the batch finishes without a flip. Retry, Skip, and Cancel apply to the whole combined batch.
 
 ## Image Queue
 
@@ -32,7 +44,11 @@ Images are aspect-fitted and centered on the selected A4 or Letter paper without
 
 When the Odd pass finishes, the app displays an alert and macOS notification. Reinsert the stack using the saved profile instruction, then confirm **Paper Reinserted — Print Even**.
 
-A one-page PDF or one-image duplex list completes without asking for a paper flip. Odd-length jobs with three or more pages include a forced blank page so the final sheet passes through the Even run.
+A one-page PDF or one-image duplex list completes without asking for a paper flip. Odd-length jobs with three or more pages include a forced blank page so the final sheet passes through the Even run. With the default order this blank is printed first, on the back of the last page, and the flip instruction reminds you to keep that sheet in the stack. If it is removed, every remaining back page shifts onto the wrong sheet.
+
+## Language
+
+Use the globe menu in the toolbar to choose **System language**, **English**, or **Tiếng Việt**. The interface switches immediately and the choice is remembered. Paper-flip notifications and error messages follow the same setting. CUPS job titles stay in English.
 
 ## Saved Data
 

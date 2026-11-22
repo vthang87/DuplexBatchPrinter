@@ -2,7 +2,7 @@
 
 ## 1. Tầm nhìn
 
-PDF Duplex Batch Printer là ứng dụng macOS native giúp người dùng in hàng loạt tài liệu PDF và hình ảnh trên máy in một mặt, đồng thời thực hiện in hai mặt thủ công theo quy trình rõ ràng, ổn định và hạn chế tối đa việc đảo sai thứ tự giấy.
+PDF Duplex Batch Printer là ứng dụng desktop đa nền tảng (macOS, Windows, Linux; bản Tauri trong `desktop/`) giúp người dùng in hàng loạt tài liệu PDF và hình ảnh trên máy in một mặt, đồng thời thực hiện in hai mặt thủ công theo quy trình rõ ràng, ổn định và hạn chế tối đa việc đảo sai thứ tự giấy. Bản Swift macOS trong `Sources/` được giữ làm tham chiếu hành vi cho đến khi bản Tauri đạt đủ parity.
 
 Ứng dụng tập trung vào tình huống thực tế tại gia đình, lớp học và văn phòng nhỏ: người dùng có nhiều tài liệu cần in liên tiếp nhưng máy in không hỗ trợ đảo mặt tự động hoặc driver máy in không xử lý thứ tự trang đúng như mong muốn.
 
@@ -36,6 +36,7 @@ PDF Duplex Batch Printer là ứng dụng macOS native giúp người dùng in h
 - Tạo trang trắng đệm cho tài liệu có số trang lẻ và buộc máy in nạp trang đó.
 - Bỏ qua bước lật giấy đối với tài liệu chỉ có một trang.
 - Làm phẳng annotation để nội dung hiển thị trong PDF được in đầy đủ.
+- Chế độ gộp: in trang lẻ của tất cả file trong một lượt, lật giấy một lần, rồi in toàn bộ trang chẵn. Mỗi file được đệm lên số trang chẵn để luôn bắt đầu ở tờ mới, nên chồng giấy tự tách thành từng bộ theo thứ tự hàng đợi.
 
 ### 4.2. Hàng đợi hình ảnh
 
@@ -84,6 +85,7 @@ PDF Duplex Batch Printer là ứng dụng macOS native giúp người dùng in h
 - Trạng thái phải phản ánh đúng phạm vi theo dõi được của CUPS, không báo hoàn thành sớm.
 - Preview và thumbnail phải giúp nhận ra nhanh nội dung ngay cả khi tên file khó đọc.
 - Giao diện phải hoạt động như ứng dụng macOS native, có icon và xuất hiện trên Dock.
+- Giao diện, thông báo và thông báo lỗi có tiếng Anh và tiếng Việt; người dùng chọn ngôn ngữ ngay trong app (Theo hệ thống, English, Tiếng Việt) và đổi ngay không cần khởi động lại.
 
 ## 6. Mục tiêu kỹ thuật
 
@@ -97,7 +99,7 @@ PDF Duplex Batch Printer là ứng dụng macOS native giúp người dùng in h
 ## 7. Tiêu chí thành công
 
 - Một batch nhiều PDF hoàn tất đúng thứ tự mà không cần mở từng file thủ công.
-- Với profile mặc định, tài liệu 9 trang in Odd `9, 7, 5, 3, 1` và Even `2, 4, 6, 8, 10`, trong đó trang 10 là trang trắng đệm.
+- Với profile mặc định, tài liệu 9 trang in Odd `9, 7, 5, 3, 1` và Even `10, 8, 6, 4, 2`, trong đó trang 10 là trang trắng đệm; sau lượt Odd chỉ cần úp ngược cả chồng giấy rồi nạp lại, không phải xếp lại thứ tự.
 - File một trang không yêu cầu lật giấy.
 - Danh sách ảnh một mặt cập nhật Completed lần lượt sau từng ảnh.
 - Danh sách và profile được khôi phục đúng sau khi đóng/mở app.
@@ -108,18 +110,19 @@ PDF Duplex Batch Printer là ứng dụng macOS native giúp người dùng in h
 
 ## 8. Ngoài phạm vi hiện tại
 
-- Không thay thế toàn bộ hộp thoại Print hoặc driver của macOS.
+- Không thay thế toàn bộ hộp thoại Print hoặc driver của hệ điều hành.
 - Không đảm bảo phát hiện được giấy đã được đặt đúng chiều bằng cảm biến vật lý.
-- Không điều khiển được các tùy chọn độc quyền mà driver không công bố qua CUPS.
+- Không điều khiển được mọi tùy chọn độc quyền của driver (đặc biệt trên Windows, nơi chỉ map được giấy/màu/simplex cơ bản).
 - Không chỉnh sửa nội dung PDF hoặc hình ảnh như một ứng dụng thiết kế.
-- Không đồng bộ hàng đợi qua cloud hoặc nhiều máy Mac.
-- Không hỗ trợ Windows, Linux, iPhone hoặc iPad trong phiên bản hiện tại.
+- Không đồng bộ hàng đợi qua cloud hoặc nhiều máy.
+- Không hỗ trợ iPhone hoặc iPad.
 
 ## 9. Hướng phát triển
 
+- Hoàn tất parity Tauri với bản Swift rồi đánh dấu Swift là archive-only.
 - Cho phép lưu nhiều preset bố cục ảnh trên một trang.
 - Hỗ trợ kéo thả trực tiếp để sắp xếp thumbnail.
 - Hiển thị lịch sử batch và thống kê số trang đã in.
-- Cho phép tiếp tục batch sau khi app hoặc máy Mac khởi động lại.
-- Bổ sung localization đầy đủ cho tiếng Việt và tiếng Anh.
-- Đóng gói, ký Developer ID và notarize để phân phối ngoài máy phát triển.
+- Cho phép tiếp tục batch sau khi app hoặc máy khởi động lại.
+- Bổ sung thêm ngôn ngữ ngoài tiếng Anh và tiếng Việt.
+- Đóng gói và ký mã (Developer ID / notarize trên macOS; mã hóa Windows nếu cần) để phân phối ngoài máy phát triển.

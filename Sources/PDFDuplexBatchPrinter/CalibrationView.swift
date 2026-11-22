@@ -8,40 +8,29 @@ struct CalibrationView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Manual Duplex Calibration").font(.title.bold())
-            Text("Calibration records how this printer outputs and accepts the paper stack. Do it once per printer/profile, then use that profile for every PDF in the batch.")
+            Text(L10n.tr("calibration.title")).font(.title.bold())
+            Text(L10n.tr("calibration.intro"))
                 .foregroundStyle(.secondary)
 
-            GroupBox("1. Create the marked test document") {
+            GroupBox(L10n.tr("calibration.step1")) {
                 HStack {
-                    Text("The four pages are marked FRONT/BACK and show the top edge.")
+                    Text(L10n.tr("calibration.step1.detail"))
                     Spacer()
-                    Button("Create & Open Test PDF") { createCalibrationPDF() }
+                    Button(L10n.tr("calibration.createPDF")) { createCalibrationPDF() }
                 }.padding(6)
             }
 
-            GroupBox("2. Print and reinsert the test stack") {
+            GroupBox(L10n.tr("calibration.step2")) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Print odd pages first with one-sided printing. Reinsert the stack, then print even pages. Adjust the settings below until page 2 is behind page 1 and page 4 is behind page 3, both upright.")
-                    Picker("Odd pass order", selection: $model.editableProfile.oddOrder) {
-                        ForEach(PageOrder.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    Picker("Even pass order", selection: $model.editableProfile.evenOrder) {
-                        ForEach(PageOrder.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    Picker("Reinsert rotation", selection: $model.editableProfile.evenRotation) {
-                        ForEach(PaperRotation.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    Picker("Binding edge", selection: $model.editableProfile.flipEdge) {
-                        ForEach(FlipEdge.allCases) { Text($0.rawValue).tag($0) }
-                    }
+                    Text(L10n.tr("calibration.step2.detail"))
+                    ProfileOrderPickers(profile: $model.editableProfile)
                 }.padding(6)
             }
 
             HStack {
-                Button("Cancel") { isPresented = false }
+                Button(L10n.tr("common.cancel")) { isPresented = false }
                 Spacer()
-                Button("Save Calibrated Profile") {
+                Button(L10n.tr("calibration.save")) {
                     model.editableProfile.lastCalibrated = Date()
                     model.saveProfile()
                     isPresented = false

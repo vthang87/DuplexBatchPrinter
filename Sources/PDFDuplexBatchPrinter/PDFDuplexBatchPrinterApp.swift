@@ -14,6 +14,8 @@ struct PDFDuplexBatchPrinterApp: App {
     var body: some Scene {
         WindowGroup("PDF Duplex Batch Printer") {
             MainView(model: model, coordinator: coordinator)
+                .id(model.language)
+                .environment(\.locale, L10n.locale)
                 .frame(minWidth: 980, minHeight: 650)
         }
         .windowResizability(.contentMinSize)

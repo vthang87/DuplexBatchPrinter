@@ -38,9 +38,9 @@ final class FlipNotificationService: NSObject, UNUserNotificationCenterDelegate,
 
     static func makeContent(file: String) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
-        content.title = "Đã in xong mặt lẻ"
+        content.title = L10n.tr("flip.title")
         content.subtitle = file
-        content.body = "Hãy lật và nạp lại giấy, sau đó quay lại ứng dụng để in mặt chẵn."
+        content.body = L10n.tr("notification.flip.body")
         content.sound = .default
         content.categoryIdentifier = "PAPER_FLIP_REQUIRED"
         return content

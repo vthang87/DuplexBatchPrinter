@@ -12,19 +12,23 @@ struct DuplexPlan: Equatable {
 
 enum DuplexPlanner {
     static func plan(pageCount: Int, profile: PrinterProfile) -> DuplexPlan {
-        guard pageCount > 0 else { return DuplexPlan(oddPass: [], evenPass: []) }
+        plan(pageCounts: [pageCount], profile: profile)
+    }
 
-        // Pad an odd-length document to the next even page number first. This
-        // makes the synthetic blank behave exactly like the final numbered
-        // page (for example page 10 in a nine-page document).
-        let paddedPageCount = pageCount.isMultiple(of: 2) ? pageCount : pageCount + 1
+    /// Plans several documents that were merged back to back into one source PDF.
+    /// Each document is padded to an even length first, so every document starts
+    /// on the front of a new sheet and the printed stack separates into sets.
+    static func plan(pageCounts: [Int], profile: PrinterProfile) -> DuplexPlan {
+        var sequence: [Int?] = []
+        var offset = 0
+        for count in pageCounts where count > 0 {
+            sequence += (1...count).map { offset + $0 }
+            if !count.isMultiple(of: 2) { sequence.append(nil) }
+            offset += count
+        }
 
-        var odd = stride(from: 1, through: paddedPageCount, by: 2).map {
-            PlannedPage(sourcePage: $0 <= pageCount ? $0 : nil)
-        }
-        var even = stride(from: 2, through: paddedPageCount, by: 2).map {
-            PlannedPage(sourcePage: $0 <= pageCount ? $0 : nil)
-        }
+        var odd = stride(from: 0, to: sequence.count, by: 2).map { PlannedPage(sourcePage: sequence[$0]) }
+        var even = stride(from: 1, to: sequence.count, by: 2).map { PlannedPage(sourcePage: sequence[$0]) }
 
         if profile.oddOrder == .reversed { odd.reverse() }
         if profile.evenOrder == .reversed { even.reverse() }

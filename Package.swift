@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "PDFDuplexBatchPrinter",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .executable(name: "PDFDuplexBatchPrinter", targets: ["PDFDuplexBatchPrinter"])
@@ -10,7 +11,8 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "PDFDuplexBatchPrinter",
-            path: "Sources/PDFDuplexBatchPrinter"
+            path: "Sources/PDFDuplexBatchPrinter",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "PDFDuplexBatchPrinterTests",

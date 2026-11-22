@@ -102,12 +102,39 @@ enum QueueContent: String, CaseIterable, Identifiable {
     case pdfs = "PDFs"
     case images = "Images"
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .pdfs: L10n.tr("queueContent.pdfs")
+        case .images: L10n.tr("queueContent.images")
+        }
+    }
+}
+
+enum PDFBatchMode: String, CaseIterable, Identifiable {
+    case perFile
+    case combined
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .perFile: L10n.tr("pdfBatchMode.perFile")
+        case .combined: L10n.tr("pdfBatchMode.combined")
+        }
+    }
 }
 
 enum QueueViewMode: String, CaseIterable, Identifiable {
     case list = "List"
     case thumbnails = "Thumbnails"
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .list: L10n.tr("viewMode.list")
+        case .thumbnails: L10n.tr("viewMode.thumbnails")
+        }
+    }
 
     var systemImage: String {
         switch self {
@@ -121,6 +148,13 @@ enum ImagePrintMode: String, CaseIterable, Identifiable {
     case singleSided = "1 mặt"
     case doubleSided = "2 mặt"
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .singleSided: L10n.tr("imagePrintMode.singleSided")
+        case .doubleSided: L10n.tr("imagePrintMode.doubleSided")
+        }
+    }
 }
 
 struct PrinterDescriptor: Identifiable, Hashable {
@@ -134,18 +168,39 @@ enum PageOrder: String, Codable, CaseIterable, Identifiable {
     case normal = "Normal"
     case reversed = "Reverse"
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .normal: L10n.tr("pageOrder.normal")
+        case .reversed: L10n.tr("pageOrder.reversed")
+        }
+    }
 }
 
 enum PaperRotation: String, Codable, CaseIterable, Identifiable {
     case none = "Keep orientation"
     case rotate180 = "Rotate 180°"
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .none: L10n.tr("rotation.none")
+        case .rotate180: L10n.tr("rotation.rotate180")
+        }
+    }
 }
 
 enum FlipEdge: String, Codable, CaseIterable, Identifiable {
     case longEdge = "Long edge"
     case shortEdge = "Short edge"
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .longEdge: L10n.tr("flipEdge.long")
+        case .shortEdge: L10n.tr("flipEdge.short")
+        }
+    }
 }
 
 enum PaperSize: String, Codable, CaseIterable, Identifiable {
@@ -153,6 +208,7 @@ enum PaperSize: String, Codable, CaseIterable, Identifiable {
     case letter = "Letter"
     var id: String { rawValue }
 
+    var title: String { rawValue }
     var cupsValue: String { rawValue }
 }
 
@@ -161,6 +217,14 @@ enum ColorMode: String, Codable, CaseIterable, Identifiable {
     case grayscale = "Grayscale"
     case color = "Color"
     var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .automatic: L10n.tr("colorMode.automatic")
+        case .grayscale: L10n.tr("colorMode.grayscale")
+        case .color: L10n.tr("colorMode.color")
+        }
+    }
 }
 
 struct PrinterProfile: Identifiable, Codable, Hashable {
@@ -183,7 +247,7 @@ struct PrinterProfile: Identifiable, Codable, Hashable {
         paperSize: PaperSize = .a4,
         colorMode: ColorMode = .automatic,
         oddOrder: PageOrder = .reversed,
-        evenOrder: PageOrder = .normal,
+        evenOrder: PageOrder = .reversed,
         evenRotation: PaperRotation = .none,
         flipEdge: FlipEdge = .longEdge,
         cupsOptions: [String: String] = [:],
@@ -203,6 +267,7 @@ struct PrinterProfile: Identifiable, Codable, Hashable {
     }
 }
 
+/// Raw values are used in CUPS job titles and stay in English.
 enum PrintPhase: String, Equatable {
     case single = "All pages"
     case odd = "Odd pages"

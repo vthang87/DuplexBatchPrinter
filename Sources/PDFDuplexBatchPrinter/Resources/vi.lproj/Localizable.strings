@@ -1,0 +1,156 @@
+/* App */
+"app.name" = "PDF Duplex Batch Printer";
+"common.ok" = "OK";
+"common.cancel" = "Hủy";
+"common.done" = "Xong";
+
+/* Language */
+"language.system" = "Theo hệ thống";
+"language.system.short" = "Hệ thống";
+"toolbar.language" = "Ngôn ngữ";
+
+/* Toolbar */
+"toolbar.addPDFs" = "Thêm PDF";
+"toolbar.addImages" = "Thêm ảnh";
+"toolbar.refreshPrinters" = "Làm mới máy in";
+
+/* Queue */
+"queueContent.pdfs" = "PDF";
+"queueContent.images" = "Ảnh";
+"viewMode.list" = "Danh sách";
+"viewMode.thumbnails" = "Ảnh thu nhỏ";
+"queue.title.pdfs" = "Hàng đợi in PDF";
+"queue.title.images" = "Hàng đợi in ảnh";
+"queue.summary.pdfs" = "%1$ld file · %2$ld trang";
+"queue.summary.images" = "%1$ld ảnh · %2$ld trang";
+"queue.preview" = "Xem trước";
+"queue.clear" = "Xóa hết";
+"queue.type" = "Loại hàng đợi";
+"queue.view" = "Kiểu xem";
+"queue.empty.pdfs.title" = "Chưa có PDF";
+"queue.empty.pdfs.detail" = "Thêm các file PDF để tạo hàng đợi in tuần tự.";
+"queue.empty.images.title" = "Chưa có ảnh";
+"queue.empty.images.detail" = "Thêm ảnh theo đúng thứ tự bạn muốn in.";
+"queue.pageCount" = "%ld trang";
+"queue.pageNumber" = "Trang %ld";
+"queue.moveEarlier" = "Đưa lên trước";
+"queue.moveLater" = "Đưa ra sau";
+"queue.remove" = "Xóa";
+
+/* Item status */
+"status.ready" = "Sẵn sàng";
+"status.printing" = "Đang in";
+"status.printingOdd" = "Đang in trang lẻ";
+"status.printingEven" = "Đang in trang chẵn";
+"status.waitingForFlip" = "Chờ lật giấy";
+"status.completed" = "Hoàn thành";
+"status.skipped" = "Đã bỏ qua";
+"status.failed" = "Lỗi";
+"status.missing" = "Không tìm thấy file gốc";
+
+/* Settings */
+"settings.title" = "Cài đặt in chung";
+"settings.description.shared" = "Một máy in và một profile được dùng cho mọi lượt in lẻ và chẵn của batch này.";
+"settings.description.imagesSingle" = "Ảnh được in theo thứ tự danh sách, mỗi ảnh một tờ, dùng chung một profile máy in.";
+"settings.pdfBatchMode" = "Chế độ in PDF";
+"pdfBatchMode.perFile" = "Lật theo từng file";
+"pdfBatchMode.combined" = "Gộp tất cả, lật 1 lần";
+"settings.printSides" = "Số mặt in";
+"imagePrintMode.singleSided" = "1 mặt";
+"imagePrintMode.doubleSided" = "2 mặt";
+"settings.printer" = "Máy in đã cài";
+"settings.noPrinters" = "Không tìm thấy máy in";
+"settings.defaultPrinter" = "%@ (Mặc định)";
+"settings.savedProfile" = "Profile đã lưu";
+"settings.newProfile" = "Profile mới";
+
+/* Profile */
+"profile.title" = "Profile";
+"profile.name" = "Tên profile";
+"profile.paper" = "Khổ giấy";
+"profile.color" = "Màu";
+"profile.oddOrder" = "Thứ tự lượt lẻ";
+"profile.evenOrder" = "Thứ tự lượt chẵn";
+"profile.rotation" = "Xoay khi nạp lại";
+"profile.bindingEdge" = "Cạnh đóng gáy";
+"profile.save" = "Lưu profile";
+"profile.calibrate" = "Hiệu chỉnh…";
+"profile.calibratedAt" = "Đã hiệu chỉnh %@";
+"profile.notCalibrated" = "Profile chưa được hiệu chỉnh";
+"pageOrder.normal" = "Xuôi";
+"pageOrder.reversed" = "Ngược";
+"rotation.none" = "Giữ nguyên hướng";
+"rotation.rotate180" = "Xoay 180°";
+"flipEdge.long" = "Cạnh dài";
+"flipEdge.short" = "Cạnh ngắn";
+"colorMode.automatic" = "Tự động";
+"colorMode.grayscale" = "Đen trắng";
+"colorMode.color" = "Màu";
+
+/* Batch state */
+"state.ready" = "Sẵn sàng";
+"state.preparing" = "Đang chuẩn bị %@";
+"state.preparing.detail" = "Đang tạo file in tạm.";
+"state.printing.single" = "Đang in 1 mặt — %@";
+"state.printing.odd" = "Đang in trang lẻ — %@";
+"state.printing.even" = "Đang in trang chẵn — %@";
+"state.printing.job" = "Job CUPS %@";
+"state.printing.submitting" = "Đang gửi tới CUPS…";
+"state.flip" = "Lật giấy cho %@";
+"state.paused" = "Tạm dừng in — %@";
+"state.completed" = "Đã in xong batch";
+"state.completed.detail" = "Mọi file không bị bỏ qua đã in xong cả hai lượt.";
+"state.cancelled" = "Đã hủy batch";
+"state.cancelled.detail" = "Sẽ không gửi thêm lượt in nào.";
+"idle.pdfs.perFile" = "In lần lượt từng file: trang lẻ → lật giấy → trang chẵn → file tiếp theo.";
+"idle.pdfs.combined" = "In trang lẻ của tất cả file một lượt → lật giấy 1 lần → in toàn bộ trang chẵn. Mỗi file bắt đầu ở tờ mới nên chồng giấy tự tách thành từng bộ.";
+"idle.images.single" = "Ảnh được in theo thứ tự danh sách, mỗi ảnh là một job 1 mặt riêng nên từng dòng cập nhật ngay khi in xong.";
+"idle.images.double" = "Danh sách ảnh được xem như các trang: trang lẻ → lật giấy → trang chẵn.";
+"batch.imageListName" = "Danh sách ảnh (%ld)";
+"batch.combinedName" = "Batch gộp (%ld file)";
+
+/* Controls */
+"controls.start" = "Bắt đầu in";
+"controls.printEven" = "Đã nạp lại giấy — In mặt chẵn";
+"controls.retry" = "Thử lại";
+"controls.skip" = "Bỏ qua file";
+
+/* Paper flip */
+"flip.title" = "Đã in xong mặt lẻ";
+"flip.alert.confirm" = "Đã lật giấy – In mặt chẵn";
+"flip.alert.later" = "Để sau";
+"flip.instruction" = "Úp ngược cả chồng giấy đã in rồi nạp lại theo kiểu đóng gáy %@. Không xếp lại thứ tự tờ, sau đó bấm tiếp tục.";
+"flip.instruction.rotate" = "Úp ngược cả chồng giấy đã in, xoay 180° rồi nạp lại theo kiểu đóng gáy %@. Không xếp lại thứ tự tờ, sau đó bấm tiếp tục.";
+"flip.note.lastPageBlank" = "Tài liệu có %1$ld trang nên tờ chứa trang %2$ld sẽ có mặt sau trắng. Hãy giữ tờ đó trong chồng giấy.";
+"flip.note.combinedBlank" = "File có số trang lẻ sẽ kết thúc bằng một mặt sau trắng để file tiếp theo bắt đầu ở tờ mới. Hãy giữ mọi tờ trong chồng giấy.";
+"notification.flip.body" = "Hãy úp ngược chồng giấy và nạp lại, sau đó quay lại ứng dụng để in mặt chẵn.";
+
+/* Preview */
+"preview.position" = "%1$ld / %2$ld";
+"preview.previous" = "Trước";
+"preview.next" = "Tiếp";
+"preview.unavailable" = "Không thể xem trước file";
+
+/* Calibration */
+"calibration.title" = "Hiệu chỉnh in hai mặt thủ công";
+"calibration.intro" = "Hiệu chỉnh ghi lại cách máy in đẩy giấy ra và nhận chồng giấy nạp lại. Chỉ cần làm một lần cho mỗi máy in/profile, sau đó dùng profile đó cho mọi PDF trong batch.";
+"calibration.step1" = "1. Tạo tài liệu kiểm tra có đánh dấu";
+"calibration.step1.detail" = "Bốn trang được đánh dấu FRONT/BACK và có chỉ mép trên.";
+"calibration.createPDF" = "Tạo và mở PDF kiểm tra";
+"calibration.step2" = "2. In và nạp lại chồng giấy kiểm tra";
+"calibration.step2.detail" = "In PDF kiểm tra từ hàng đợi PDF. Sau lượt lẻ, úp ngược cả chồng giấy và nạp lại mà không xếp lại. Chỉnh các thiết lập bên dưới cho đến khi trang 2 nằm sau trang 1 và trang 4 nằm sau trang 3, cả hai đều đúng chiều.";
+"calibration.save" = "Lưu profile đã hiệu chỉnh";
+
+/* Errors */
+"error.pdf.cannotOpen" = "Không mở được %@.";
+"error.pdf.cannotOpenImage" = "Không mở được ảnh %@.";
+"error.pdf.emptyImageList" = "Hãy thêm ít nhất một ảnh trước khi in.";
+"error.pdf.emptyDocument" = "%@ không có trang nào.";
+"error.pdf.cannotCreatePage" = "Không tạo được trang PDF trắng.";
+"error.pdf.cannotWrite" = "Không ghi được file PDF tạm tại %@.";
+"error.cups.commandFailed" = "Lệnh CUPS %1$@ bị lỗi: %2$@";
+"error.cups.noJobID" = "CUPS không trả về mã job: %@";
+"error.queue.restorePDF" = "Không khôi phục được hàng đợi PDF đã lưu: %@";
+"error.queue.savePDF" = "Không lưu được hàng đợi PDF: %@";
+"error.queue.restoreImages" = "Không khôi phục được hàng đợi ảnh đã lưu: %@";
+"error.queue.saveImages" = "Không lưu được hàng đợi ảnh: %@";

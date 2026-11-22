@@ -22,7 +22,13 @@ final class ProfileStoreTests: XCTestCase {
             oddOrder: .normal,
             evenOrder: .reversed
         )
-        try JSONEncoder().encode([oldDefault, custom]).write(to: profileURL)
+        let previousDefault = PrinterProfile(
+            name: "Default profile",
+            printerQueue: "other-printer",
+            oddOrder: .reversed,
+            evenOrder: .normal
+        )
+        try JSONEncoder().encode([oldDefault, custom, previousDefault]).write(to: profileURL)
 
         let suiteName = "ProfileStoreTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -30,8 +36,10 @@ final class ProfileStoreTests: XCTestCase {
 
         let store = ProfileStore(fileURL: profileURL, userDefaults: defaults)
         XCTAssertEqual(store.profiles[0].oddOrder, .reversed)
-        XCTAssertEqual(store.profiles[0].evenOrder, .normal)
+        XCTAssertEqual(store.profiles[0].evenOrder, .reversed)
         XCTAssertEqual(store.profiles[1].oddOrder, .normal)
         XCTAssertEqual(store.profiles[1].evenOrder, .reversed)
+        XCTAssertEqual(store.profiles[2].oddOrder, .reversed)
+        XCTAssertEqual(store.profiles[2].evenOrder, .reversed)
     }
 }

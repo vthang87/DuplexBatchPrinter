@@ -19,10 +19,13 @@ final class BatchCoordinator: ObservableObject {
         self.pdfService = pdfService
     }
 
-    func start(queue: BindingBox<[PDFQueueItem]>, profile: PrinterProfile) {
+    func start(queue: BindingBox<[PDFQueueItem]>, mode: PDFBatchMode = .perFile, profile: PrinterProfile) {
         guard !state.isRunning, !queue.value.isEmpty, !profile.printerQueue.isEmpty else { return }
         resetStatuses(queue: queue)
-        task = Task { await run(queue: queue, profile: profile) }
+        switch mode {
+        case .perFile: task = Task { await run(queue: queue, profile: profile) }
+        case .combined: task = Task { await runCombined(queue: queue, profile: profile) }
+        }
     }
 
     func startImages(queue: BindingBox<[ImageQueueItem]>, mode: ImagePrintMode, profile: PrinterProfile) {
@@ -136,6 +139,41 @@ final class BatchCoordinator: ObservableObject {
         state = .completed
     }
 
+    private func runCombined(queue: BindingBox<[PDFQueueItem]>, profile: PrinterProfile) async {
+        defer {
+            activeJob = nil
+            currentIndex = nil
+            task = nil
+        }
+
+        var shouldRetry = true
+        while shouldRetry {
+            shouldRetry = false
+            do {
+                try await printCombined(queue: queue, profile: profile)
+                state = .completed
+            } catch is CancellationError {
+                state = .cancelled
+                return
+            } catch {
+                setPDFStatus(.failed, queue: queue)
+                state = .pausedOnError(file: combinedName(queue: queue), message: error.localizedDescription)
+                let decision = await withCheckedContinuation { errorContinuation = $0 }
+                switch decision {
+                case .retry:
+                    setPDFStatus(.ready, queue: queue)
+                    shouldRetry = true
+                case .skip:
+                    setPDFStatus(.skipped, queue: queue)
+                    state = .completed
+                case .cancel:
+                    state = .cancelled
+                    return
+                }
+            }
+        }
+    }
+
     private func runImages(queue: BindingBox<[ImageQueueItem]>, profile: PrinterProfile) async {
         defer {
             activeJob = nil
@@ -194,7 +232,10 @@ final class BatchCoordinator: ObservableObject {
         }
 
         queue.value[index].status = .waitingForFlip
-        state = .waitingForFlip(file: item.name, instruction: flipInstruction(profile: profile))
+        let blankBackNote = plan.evenPass.contains(where: { $0.sourcePage == nil })
+            ? L10n.tr("flip.note.lastPageBlank", item.pageCount, item.pageCount)
+            : nil
+        state = .waitingForFlip(file: item.name, instruction: flipInstruction(profile: profile, blankBackNote: blankBackNote))
         try await withCheckedThrowingContinuation { flipContinuation = $0 }
 
         let evenURL = try pdfService.makePass(sourceURL: item.url, pages: plan.evenPass, rotation: profile.evenRotation, temporaryDirectory: tempDirectory, label: "even")
@@ -204,11 +245,50 @@ final class BatchCoordinator: ObservableObject {
         queue.value[index].status = .completed
     }
 
+    private func printCombined(queue: BindingBox<[PDFQueueItem]>, profile: PrinterProfile) async throws {
+        let fileName = combinedName(queue: queue)
+        state = .preparing(file: fileName)
+        let tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("PDFDuplexBatchPrinter", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+        var temporaryFiles: [URL] = []
+        defer { for url in temporaryFiles { try? FileManager.default.removeItem(at: url) } }
+
+        let merged = try pdfService.makeMergedDocument(
+            sourceURLs: queue.value.filter { $0.status != .missing }.map(\.url),
+            temporaryDirectory: tempDirectory
+        )
+        temporaryFiles.append(merged.url)
+
+        let plan = DuplexPlanner.plan(pageCounts: merged.pageCounts, profile: profile)
+        let oddURL = try pdfService.makePass(sourceURL: merged.url, pages: plan.oddPass, rotation: .none, temporaryDirectory: tempDirectory, label: "combined-odd")
+        temporaryFiles.append(oddURL)
+        setPDFStatus(.printingOdd, queue: queue)
+        try await printPass(url: oddURL, fileName: fileName, phase: .odd, profile: profile)
+
+        guard plan.evenPass.contains(where: { $0.sourcePage != nil }) else {
+            setPDFStatus(.completed, queue: queue)
+            return
+        }
+
+        setPDFStatus(.waitingForFlip, queue: queue)
+        let blankBackNote = merged.pageCounts.contains(where: { !$0.isMultiple(of: 2) })
+            ? L10n.tr("flip.note.combinedBlank")
+            : nil
+        state = .waitingForFlip(file: fileName, instruction: flipInstruction(profile: profile, blankBackNote: blankBackNote))
+        try await withCheckedThrowingContinuation { flipContinuation = $0 }
+
+        let evenURL = try pdfService.makePass(sourceURL: merged.url, pages: plan.evenPass, rotation: profile.evenRotation, temporaryDirectory: tempDirectory, label: "combined-even")
+        temporaryFiles.append(evenURL)
+        setPDFStatus(.printingEven, queue: queue)
+        try await printPass(url: evenURL, fileName: fileName, phase: .even, profile: profile)
+        setPDFStatus(.completed, queue: queue)
+    }
+
     private func printImages(
         queue: BindingBox<[ImageQueueItem]>,
         profile: PrinterProfile
     ) async throws {
-        let fileName = "Image list (\(queue.value.count))"
+        let fileName = L10n.tr("batch.imageListName", queue.value.count)
         state = .preparing(file: fileName)
         let tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("PDFDuplexBatchPrinter", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
@@ -240,7 +320,10 @@ final class BatchCoordinator: ObservableObject {
         }
 
         setImageStatus(.waitingForFlip, queue: queue)
-        state = .waitingForFlip(file: fileName, instruction: flipInstruction(profile: profile))
+        let blankBackNote = plan.evenPass.contains(where: { $0.sourcePage == nil })
+            ? L10n.tr("flip.note.lastPageBlank", queue.value.count, queue.value.count)
+            : nil
+        state = .waitingForFlip(file: fileName, instruction: flipInstruction(profile: profile, blankBackNote: blankBackNote))
         try await withCheckedThrowingContinuation { flipContinuation = $0 }
 
         let evenURL = try pdfService.makePass(
@@ -288,9 +371,23 @@ final class BatchCoordinator: ObservableObject {
         activeJob = nil
     }
 
-    private func flipInstruction(profile: PrinterProfile) -> String {
-        let rotation = profile.evenRotation == .rotate180 ? "rotate the stack 180°, then " : ""
-        return "Take the printed stack, \(rotation)reinsert it for \(profile.flipEdge.rawValue.lowercased()) binding. Keep the page order unchanged, then continue."
+    func flipInstruction(profile: PrinterProfile, blankBackNote: String? = nil) -> String {
+        let edge = profile.flipEdge.title.lowercased(with: L10n.locale)
+        var instruction = profile.evenRotation == .rotate180
+            ? L10n.tr("flip.instruction.rotate", edge)
+            : L10n.tr("flip.instruction", edge)
+        if let blankBackNote { instruction += " " + blankBackNote }
+        return instruction
+    }
+
+    private func combinedName(queue: BindingBox<[PDFQueueItem]>) -> String {
+        L10n.tr("batch.combinedName", queue.value.filter { $0.status != .missing }.count)
+    }
+
+    private func setPDFStatus(_ status: QueueItemStatus, queue: BindingBox<[PDFQueueItem]>) {
+        for index in queue.value.indices where queue.value[index].status != .missing {
+            queue.value[index].status = status
+        }
     }
 
     private func resetStatuses(queue: BindingBox<[PDFQueueItem]>) {

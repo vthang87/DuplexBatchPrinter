@@ -1,0 +1,156 @@
+/* App */
+"app.name" = "PDF Duplex Batch Printer";
+"common.ok" = "OK";
+"common.cancel" = "Cancel";
+"common.done" = "Done";
+
+/* Language */
+"language.system" = "System language";
+"language.system.short" = "Auto";
+"toolbar.language" = "Language";
+
+/* Toolbar */
+"toolbar.addPDFs" = "Add PDFs";
+"toolbar.addImages" = "Add Images";
+"toolbar.refreshPrinters" = "Refresh printers";
+
+/* Queue */
+"queueContent.pdfs" = "PDFs";
+"queueContent.images" = "Images";
+"viewMode.list" = "List";
+"viewMode.thumbnails" = "Thumbnails";
+"queue.title.pdfs" = "PDF Print Queue";
+"queue.title.images" = "Image Print Queue";
+"queue.summary.pdfs" = "%1$ld files · %2$ld pages";
+"queue.summary.images" = "%1$ld images · %2$ld pages";
+"queue.preview" = "Preview";
+"queue.clear" = "Clear";
+"queue.type" = "Queue type";
+"queue.view" = "View";
+"queue.empty.pdfs.title" = "No PDFs";
+"queue.empty.pdfs.detail" = "Add PDF files to create a sequential print queue.";
+"queue.empty.images.title" = "No Images";
+"queue.empty.images.detail" = "Add images in the order you want them printed.";
+"queue.pageCount" = "%ld pages";
+"queue.pageNumber" = "Page %ld";
+"queue.moveEarlier" = "Move earlier";
+"queue.moveLater" = "Move later";
+"queue.remove" = "Remove";
+
+/* Item status */
+"status.ready" = "Ready";
+"status.printing" = "Printing";
+"status.printingOdd" = "Printing odd pages";
+"status.printingEven" = "Printing even pages";
+"status.waitingForFlip" = "Waiting for paper flip";
+"status.completed" = "Completed";
+"status.skipped" = "Skipped";
+"status.failed" = "Error";
+"status.missing" = "Original file not found";
+
+/* Settings */
+"settings.title" = "Shared Print Settings";
+"settings.description.shared" = "One printer and profile are applied to every odd and even pass in this batch.";
+"settings.description.imagesSingle" = "Images print in list order, one image per sheet, using one shared printer profile.";
+"settings.pdfBatchMode" = "PDF batch mode";
+"pdfBatchMode.perFile" = "Flip per file";
+"pdfBatchMode.combined" = "All files, flip once";
+"settings.printSides" = "Print sides";
+"imagePrintMode.singleSided" = "One-sided";
+"imagePrintMode.doubleSided" = "Two-sided";
+"settings.printer" = "Installed printer";
+"settings.noPrinters" = "No printers found";
+"settings.defaultPrinter" = "%@ (Default)";
+"settings.savedProfile" = "Saved profile";
+"settings.newProfile" = "New profile";
+
+/* Profile */
+"profile.title" = "Profile";
+"profile.name" = "Profile name";
+"profile.paper" = "Paper";
+"profile.color" = "Color";
+"profile.oddOrder" = "Odd pass order";
+"profile.evenOrder" = "Even pass order";
+"profile.rotation" = "Reinsert rotation";
+"profile.bindingEdge" = "Binding edge";
+"profile.save" = "Save Profile";
+"profile.calibrate" = "Calibrate…";
+"profile.calibratedAt" = "Calibrated %@";
+"profile.notCalibrated" = "Profile not calibrated";
+"pageOrder.normal" = "Normal";
+"pageOrder.reversed" = "Reverse";
+"rotation.none" = "Keep orientation";
+"rotation.rotate180" = "Rotate 180°";
+"flipEdge.long" = "Long edge";
+"flipEdge.short" = "Short edge";
+"colorMode.automatic" = "Automatic";
+"colorMode.grayscale" = "Grayscale";
+"colorMode.color" = "Color";
+
+/* Batch state */
+"state.ready" = "Ready";
+"state.preparing" = "Preparing %@";
+"state.preparing.detail" = "Creating a temporary print pass.";
+"state.printing.single" = "Printing one-sided — %@";
+"state.printing.odd" = "Printing odd pages — %@";
+"state.printing.even" = "Printing even pages — %@";
+"state.printing.job" = "CUPS job %@";
+"state.printing.submitting" = "Submitting to CUPS…";
+"state.flip" = "Flip paper for %@";
+"state.paused" = "Printing paused — %@";
+"state.completed" = "Batch completed";
+"state.completed.detail" = "Every non-skipped file has completed both passes.";
+"state.cancelled" = "Batch cancelled";
+"state.cancelled.detail" = "No additional print passes will be submitted.";
+"idle.pdfs.perFile" = "Files are processed one at a time: odd pages → flip → even pages → next file.";
+"idle.pdfs.combined" = "All files print odd pages in one run → flip once → all even pages. Each file starts on a new sheet, so the stack separates into sets.";
+"idle.images.single" = "Images print in list order, one one-sided job per image, so each row updates as it completes.";
+"idle.images.double" = "The image list is treated as pages: odd pages → flip → even pages.";
+"batch.imageListName" = "Image list (%ld)";
+"batch.combinedName" = "Combined batch (%ld files)";
+
+/* Controls */
+"controls.start" = "Start Batch Print";
+"controls.printEven" = "Paper Reinserted — Print Even";
+"controls.retry" = "Retry";
+"controls.skip" = "Skip File";
+
+/* Paper flip */
+"flip.title" = "Odd pages finished";
+"flip.alert.confirm" = "Paper flipped — Print even pages";
+"flip.alert.later" = "Later";
+"flip.instruction" = "Turn the whole printed stack over and reinsert it for %@ binding. Do not re-sort the sheets, then continue.";
+"flip.instruction.rotate" = "Turn the whole printed stack over, rotate it 180°, then reinsert it for %@ binding. Do not re-sort the sheets, then continue.";
+"flip.note.lastPageBlank" = "The document has %1$ld pages, so the sheet with page %2$ld gets a blank back. Keep it in the stack.";
+"flip.note.combinedBlank" = "Files with an odd page count end with a blank back so the next file starts on a new sheet. Keep every sheet in the stack.";
+"notification.flip.body" = "Turn the stack over and reinsert it, then return to the app to print the even pages.";
+
+/* Preview */
+"preview.position" = "%1$ld of %2$ld";
+"preview.previous" = "Previous";
+"preview.next" = "Next";
+"preview.unavailable" = "Cannot preview file";
+
+/* Calibration */
+"calibration.title" = "Manual Duplex Calibration";
+"calibration.intro" = "Calibration records how this printer outputs and accepts the paper stack. Do it once per printer/profile, then use that profile for every PDF in the batch.";
+"calibration.step1" = "1. Create the marked test document";
+"calibration.step1.detail" = "The four pages are marked FRONT/BACK and show the top edge.";
+"calibration.createPDF" = "Create & Open Test PDF";
+"calibration.step2" = "2. Print and reinsert the test stack";
+"calibration.step2.detail" = "Print the test PDF from the PDF queue. After the odd pass, turn the whole stack over and reinsert it without re-sorting. Adjust the settings below until page 2 is behind page 1 and page 4 is behind page 3, both upright.";
+"calibration.save" = "Save Calibrated Profile";
+
+/* Errors */
+"error.pdf.cannotOpen" = "Cannot open %@.";
+"error.pdf.cannotOpenImage" = "Cannot open image %@.";
+"error.pdf.emptyImageList" = "Add at least one image before printing.";
+"error.pdf.emptyDocument" = "%@ has no pages.";
+"error.pdf.cannotCreatePage" = "Cannot create a blank PDF page.";
+"error.pdf.cannotWrite" = "Cannot write temporary PDF at %@.";
+"error.cups.commandFailed" = "CUPS command %1$@ failed: %2$@";
+"error.cups.noJobID" = "CUPS did not return a job ID: %@";
+"error.queue.restorePDF" = "Cannot restore the saved PDF queue: %@";
+"error.queue.savePDF" = "Cannot save the PDF queue: %@";
+"error.queue.restoreImages" = "Cannot restore the saved image queue: %@";
+"error.queue.saveImages" = "Cannot save the image queue: %@";
